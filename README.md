@@ -22,7 +22,6 @@ go-callsite-stats -json ./...
 
 ## Further Improvements
 
-- [ ] skip tests
 - [ ] skip build files and not include directives
 - [ ] skip generated once go@1.21 is released 
 - [ ] asserting that type in methods in callsites matches target type

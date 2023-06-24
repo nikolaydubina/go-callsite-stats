@@ -14,8 +14,10 @@ import (
 func main() {
 	var (
 		packagePattern string
+		tests          bool
 		outJSON        bool
 	)
+	flag.BoolVar(&tests, "tests", false, "include tests")
 	flag.BoolVar(&outJSON, "json", false, "output as JSONL to STDOUT")
 
 	flag.Parse()
@@ -28,7 +30,11 @@ func main() {
 	var fset = token.NewFileSet()
 
 	mode := packages.NeedName | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo
-	cfg := &packages.Config{Fset: fset, Mode: mode}
+	cfg := &packages.Config{
+		Fset:  fset,
+		Mode:  mode,
+		Tests: tests,
+	}
 	pkgs, err := packages.Load(cfg, packagePattern)
 	if err != nil {
 		log.Fatal(err)
@@ -45,11 +51,11 @@ func main() {
 	if outJSON {
 		encoder := json.NewEncoder(os.Stdout)
 		for funcID, funcStat := range stats.GetAll() {
-			type FuncStatRow struct {
+			type FuncStatRowJSON struct {
 				FuncID
 				*FuncCallSiteStats
 			}
-			if err := encoder.Encode(FuncStatRow{FuncID: funcID, FuncCallSiteStats: funcStat}); err != nil {
+			if err := encoder.Encode(FuncStatRowJSON{FuncID: funcID, FuncCallSiteStats: funcStat}); err != nil {
 				log.Printf("%s\n", err)
 			}
 		}
@@ -62,8 +68,9 @@ func CollectFuncCallSiteStatsForFile(file *ast.File, stats FuncCallSiteStatsMapR
 	ast.Inspect(file, func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.CallExpr:
-			funcID, funcStats := analyzeFuncCallArguments(n)
-			stats.Add(funcID, funcStats)
+			if funcID, funcStats := analyzeFuncCallArguments(n); funcID != NilFuncID {
+				stats.Add(funcID, funcStats)
+			}
 		case *ast.AssignStmt:
 			analyzeMultiFunctionAssignment(stats, n.Lhs, n.Rhs)
 		}
@@ -71,8 +78,8 @@ func CollectFuncCallSiteStatsForFile(file *ast.File, stats FuncCallSiteStatsMapR
 	})
 }
 
-func analyzeFuncCallArguments(n *ast.CallExpr) (funcID FuncID, stats FuncCallSiteStats) {
-	stats.CallCount = 1
+func analyzeFuncCallArguments(n *ast.CallExpr) (FuncID, FuncCallSiteStats) {
+	stats := FuncCallSiteStats{CallCount: 1}
 
 	for _, expr := range n.Args {
 		if ident, ok := expr.(*ast.Ident); ok && ident != nil {
@@ -173,9 +180,9 @@ func functionsNamesFromCallExpr(n *ast.CallExpr) (funcs []string) {
 	}
 	if sel, ok := n.Fun.(*ast.SelectorExpr); ok && sel != nil {
 		funcs = append(funcs, sel.Sel.Name)
-		if call, ok := sel.X.(*ast.CallExpr); ok && call != nil {
-			funcs = append(funcs, functionsNamesFromCallExpr(call)...)
-		}
+		// if call, ok := sel.X.(*ast.CallExpr); ok && call != nil {
+		// 	funcs = append(funcs, functionsNamesFromCallExpr(call)...)
+		// }
 		return funcs
 	}
 	return nil
