@@ -102,7 +102,7 @@ go-callsite-stats -json ./... | grep createEndpoint | jq
 - [ ] file tree in UI
 - [ ] website with open source analysis based on pkg.go.dev
 
-## Appendix: A
+## Appendix A: why not go analysis toolchain
 
 Go analysis toolchain does not support multiple packages in pass.
 They recommend either export to `STDOUT` and process in separate process or to use `go/packages`.
@@ -110,3 +110,4 @@ They recommend either export to `STDOUT` and process in separate process or to u
 * https://github.com/golang/go/issues/53215
 * https://github.com/golang/go/issues/50265
 * https://eli.thegreenplace.net/2020/writing-multi-package-analysis-tools-for-go/
+
