@@ -136,14 +136,13 @@ func splitFuncCalls(lhs []ast.Expr, rhs []ast.Expr) (funcs []funcCallWithReturn)
 	return funcs
 }
 
-func analyzeSingleFunctionAssignment(lhs []ast.Expr, call *ast.CallExpr) (funcID FuncID, stats FuncCallSiteStats) {
-	// TODO: returns are attributable only to final function in chain
-	funcID = FinalCallerFuncIDFromCallExpr(call)
+func analyzeSingleFunctionAssignment(lhs []ast.Expr, call *ast.CallExpr) (FuncID, FuncCallSiteStats) {
+	var stats FuncCallSiteStats
 
 	if len(lhs) == 0 {
 		stats.ReturnIgnoredCount++
 	}
-	if len(lhs) > 0 {
+	if len(lhs) > 1 {
 		stats.MultipleAssignmentCount = 1
 	}
 	for _, expr := range lhs {
@@ -152,7 +151,7 @@ func analyzeSingleFunctionAssignment(lhs []ast.Expr, call *ast.CallExpr) (funcID
 		}
 	}
 
-	return funcID, stats
+	return FinalCallerFuncIDFromCallExpr(call), stats
 }
 
 var NilFuncID = FuncID{}
