@@ -2,7 +2,8 @@ package callsitestats
 
 import "go/ast"
 
-// CollectFuncCallSiteStatsForFile can be used in analyzer and in other static analysis tools
+// CollectFuncCallSiteStatsForFile can be used in analyzer and in other static analysis tools.
+// Not thread safe.
 // https://go.dev/ref/spec#Assignment_statements
 func CollectFuncCallSiteStatsForFile(file *ast.File, stats FuncCallSiteStatsMapRepo) {
 	ast.Inspect(file, func(n ast.Node) bool {
@@ -94,23 +95,22 @@ func analyzeSingleFunctionAssignment(lhs []ast.Expr, call *ast.CallExpr) (FuncID
 	return finalCallerFuncIDFromCallExpr(call), stats
 }
 
-var NilFuncID = FuncID{}
+// NilFuncID is zero value
+var NilFuncID FuncID
 
 // FuncID is an indexable type that identifies function
 type FuncID struct {
 	FunctionName string `json:"function_name"`
 }
 
-func NewFuncID(funcName string) FuncID { return FuncID{FunctionName: funcName} }
-
 // finalCallerFuncIDFromCallExpr extracts last function in call expression.
 // If chain of calls and fields, then last function is only considered.
 func finalCallerFuncIDFromCallExpr(n *ast.CallExpr) FuncID {
 	switch n := n.Fun.(type) {
 	case *ast.Ident:
-		return NewFuncID(n.Name)
+		return FuncID{FunctionName: n.Name}
 	case *ast.SelectorExpr:
-		return NewFuncID(n.Sel.Name)
+		return FuncID{FunctionName: n.Sel.Name}
 	default:
 		return NilFuncID
 	}

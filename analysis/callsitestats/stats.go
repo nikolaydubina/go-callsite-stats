@@ -37,7 +37,7 @@ func addCountMap[T uint](from, to map[string]T) {
 	}
 }
 
-// FuncCallSiteStatsMapRepo is a container for functions to their statistics details
+// FuncCallSiteStatsMapRepo is a container for functions to their statistics details.
 type FuncCallSiteStatsMapRepo struct{ m map[FuncID]*FuncCallSiteStats }
 
 func NewFuncCallSiteStatsMapRepo() FuncCallSiteStatsMapRepo {
