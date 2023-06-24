@@ -16,7 +16,7 @@ func main() {
 		packagePattern string
 		outJSON        bool
 	)
-	flag.BoolVar(&outJSON, "json", true, "output as JSONL to STDOUT")
+	flag.BoolVar(&outJSON, "json", false, "output as JSONL to STDOUT")
 
 	flag.Parse()
 	if flag.NArg() == 0 {
@@ -34,18 +34,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	stats := make(map[FuncID]*FuncCallSiteStats)
+	stats := NewFuncCallSiteStatsMapRepo()
+
 	for _, pkg := range pkgs {
 		for _, fileAst := range pkg.Syntax {
-			for funcID, funcStats := range CollectFuncCallSiteStatsForFile(fileAst) {
-				mergeFuncCallSiteStatsToMap(stats, funcID, funcStats)
-			}
+			CollectFuncCallSiteStatsForFile(fileAst, stats)
 		}
 	}
 
 	if outJSON {
 		encoder := json.NewEncoder(os.Stdout)
-		for funcID, funcStat := range stats {
+		for funcID, funcStat := range stats.GetAll() {
 			type FuncStatRow struct {
 				FuncID
 				*FuncCallSiteStats
@@ -57,36 +56,23 @@ func main() {
 	}
 }
 
-func mergeFuncCallSiteStatsToMap(stats map[FuncID]*FuncCallSiteStats, funcID FuncID, funcStats *FuncCallSiteStats) {
-	if _, ok := stats[funcID]; !ok {
-		stats[funcID] = &FuncCallSiteStats{}
-	}
-	mergeFuncCallSiteStats(funcStats, stats[funcID])
-}
-
 // CollectFuncCallSiteStatsForFile can be used in analyzer and in other static analysis tools
 // https://go.dev/ref/spec#Assignment_statements
-func CollectFuncCallSiteStatsForFile(file *ast.File) map[FuncID]*FuncCallSiteStats {
-	stats := map[FuncID]*FuncCallSiteStats{}
-
+func CollectFuncCallSiteStatsForFile(file *ast.File, stats FuncCallSiteStatsMapRepo) {
 	ast.Inspect(file, func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.CallExpr:
 			funcID, funcStats := analyzeFuncCallArguments(n)
-			mergeFuncCallSiteStatsToMap(stats, funcID, &funcStats)
+			stats.Add(funcID, funcStats)
 		case *ast.AssignStmt:
-			for funcID, funcStats := range analyzeMultiFunctionAssignment(n.Lhs, n.Rhs) {
-				mergeFuncCallSiteStatsToMap(stats, funcID, funcStats)
-			}
+			analyzeMultiFunctionAssignment(stats, n.Lhs, n.Rhs)
 		}
 		return true
 	})
-
-	return stats
 }
 
 func analyzeFuncCallArguments(n *ast.CallExpr) (funcID FuncID, stats FuncCallSiteStats) {
-	funcID = FinalCallerFuncIDFromCallExpr(n)
+	stats.CallCount = 1
 
 	for _, expr := range n.Args {
 		if ident, ok := expr.(*ast.Ident); ok && ident != nil {
@@ -94,40 +80,39 @@ func analyzeFuncCallArguments(n *ast.CallExpr) (funcID FuncID, stats FuncCallSit
 		}
 	}
 
-	return funcID, stats
+	return FinalCallerFuncIDFromCallExpr(n), stats
 }
 
-func analyzeMultiFunctionAssignment(lhs []ast.Expr, rhs []ast.Expr) map[FuncID]*FuncCallSiteStats {
+func analyzeMultiFunctionAssignment(stats FuncCallSiteStatsMapRepo, lhs []ast.Expr, rhs []ast.Expr) {
 	if len(rhs) == 0 {
-		return nil
+		return
 	}
 
 	// single assignment, one function on the right
 	if len(rhs) == 1 {
 		call, ok := rhs[0].(*ast.CallExpr)
 		if !ok || call == nil {
-			return nil
+			return
 		}
 		funcID, funcStats := analyzeSingleFunctionAssignment(lhs, call)
-		return map[FuncID]*FuncCallSiteStats{funcID: &funcStats}
+		if funcID == NilFuncID {
+			return
+		}
+		stats.Add(funcID, funcStats)
+		return
 	}
 
 	// multiple assignment
-	stats := make(map[FuncID]*FuncCallSiteStats)
-
 	// if function call is detected, then it is matched to single return on left hand side and analyzed as if single call
 	for _, funcCall := range splitFuncCalls(lhs, rhs) {
 		funcID, funcStats := analyzeSingleFunctionAssignment(funcCall.lhs, funcCall.call)
+		if funcID == NilFuncID {
+			continue
+		}
 
 		funcStats.MultipleAssignmentWithOtherCount++
-
-		if _, ok := stats[funcID]; !ok {
-			stats[funcID] = &FuncCallSiteStats{}
-		}
-		mergeFuncCallSiteStats(&funcStats, stats[funcID])
+		stats.Add(funcID, funcStats)
 	}
-
-	return stats
 }
 
 type funcCallWithReturn struct {
