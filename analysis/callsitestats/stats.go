@@ -1,5 +1,6 @@
-package main
+package callsitestats
 
+// FuncCallSiteStats contains various aggregated information about function call sites
 type FuncCallSiteStats struct {
 	CallCount                        uint              `json:"call_count"`
 	ArgumentNameCount                []map[string]uint `json:"argument_name_count,omitempty"`
@@ -10,6 +11,7 @@ type FuncCallSiteStats struct {
 	MultipleAssignmentWithOtherCount uint              `json:"multiple_assignment_with_other_count"`
 }
 
+// IncrBy increments current object by values from other statistics object
 func (s *FuncCallSiteStats) IncrBy(from FuncCallSiteStats) {
 	s.ReturnNameCount = addSliceCountMap(from.ReturnNameCount, s.ReturnNameCount)
 	s.ArgumentNameCount = addSliceCountMap(from.ArgumentNameCount, s.ArgumentNameCount)
@@ -35,12 +37,14 @@ func addCountMap[T uint](from, to map[string]T) {
 	}
 }
 
+// FuncCallSiteStatsMapRepo is a container for functions to their statistics details
 type FuncCallSiteStatsMapRepo struct{ m map[FuncID]*FuncCallSiteStats }
 
 func NewFuncCallSiteStatsMapRepo() FuncCallSiteStatsMapRepo {
 	return FuncCallSiteStatsMapRepo{m: make(map[FuncID]*FuncCallSiteStats)}
 }
 
+// Add statistics for a function
 func (s FuncCallSiteStatsMapRepo) Add(id FuncID, stats FuncCallSiteStats) {
 	if _, ok := s.m[id]; !ok {
 		s.m[id] = &FuncCallSiteStats{}
@@ -48,4 +52,5 @@ func (s FuncCallSiteStatsMapRepo) Add(id FuncID, stats FuncCallSiteStats) {
 	s.m[id].IncrBy(stats)
 }
 
+// GetAll statistics objects
 func (s FuncCallSiteStatsMapRepo) GetAll() map[FuncID]*FuncCallSiteStats { return s.m }
