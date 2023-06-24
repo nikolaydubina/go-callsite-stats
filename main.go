@@ -167,23 +167,12 @@ func NewFuncID(funcName string) FuncID { return FuncID{FunctionName: funcName} }
 // FinalCallerFuncIDFromCallExpr extracts last function in call expression.
 // If chain of calls and fields, then last function is only considered.
 func FinalCallerFuncIDFromCallExpr(n *ast.CallExpr) FuncID {
-	fnames := functionsNamesFromCallExpr(n)
-	if len(fnames) == 0 {
+	switch n := n.Fun.(type) {
+	case *ast.Ident:
+		return NewFuncID(n.Name)
+	case *ast.SelectorExpr:
+		return NewFuncID(n.Sel.Name)
+	default:
 		return NilFuncID
 	}
-	return NewFuncID(fnames[len(fnames)-1])
-}
-
-func functionsNamesFromCallExpr(n *ast.CallExpr) (funcs []string) {
-	if ind, ok := n.Fun.(*ast.Ident); ok && ind != nil {
-		return []string{ind.Name}
-	}
-	if sel, ok := n.Fun.(*ast.SelectorExpr); ok && sel != nil {
-		funcs = append(funcs, sel.Sel.Name)
-		// if call, ok := sel.X.(*ast.CallExpr); ok && call != nil {
-		// 	funcs = append(funcs, functionsNamesFromCallExpr(call)...)
-		// }
-		return funcs
-	}
-	return nil
 }
