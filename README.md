@@ -1,10 +1,9 @@
-# go-callsite-stats
+## go-callsite-stats: get information about callsites of functions
 
 [![go-recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nikolaydubina/go-callsite-stats)](https://goreportcard.com/report/github.com/nikolaydubina/go-callsite-stats)
 
-Get information about callsites of functions.
-This can be useful for refactoring, better naming, better signatures, OOP design ideas.
+> Useful for refactoring, better naming, better signatures, OOP
 
 ```
 go install github.com/nikolaydubina/go-callsite-stats@latest
