@@ -4,7 +4,7 @@ package callsitestats
 type FuncCallSiteStats struct {
 	CallCount                        uint              `json:"call_count"`
 	ArgumentNameCount                []map[string]uint `json:"argument_name_count,omitempty"`
-	ArgumentValueCount               []map[string]uint `json:"argument_value_count,omitempty"`
+	ArgumentValueCount               []map[string]uint `json:"argument_value_count,omitempty"` // TODO
 	ReturnNameCount                  []map[string]uint `json:"return_name_count,omitempty"`
 	ReturnIgnoredCount               uint              `json:"return_ignored_count"`
 	MultipleAssignmentCount          uint              `json:"multiple_assignment_count"`

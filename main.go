@@ -8,8 +8,19 @@ import (
 	"os"
 
 	"github.com/nikolaydubina/go-callsite-stats/analysis/callsitestats"
+	"github.com/nikolaydubina/go-callsite-stats/render"
+
 	"golang.org/x/tools/go/packages"
 )
+
+const doc = `
+go-callsite-stats is a tool to collect statistics about function call sites.
+
+Example:
+go-callsite-stats ./...
+
+Output format:
+`
 
 func main() {
 	var (
@@ -20,9 +31,21 @@ func main() {
 	flag.BoolVar(&tests, "tests", false, "include tests")
 	flag.BoolVar(&outJSON, "json", false, "output as JSONL to STDOUT")
 
+	printer := render.NewFuncCallSiteStatsTextPrettyPrinter(os.Stdout)
+	defer printer.Flush()
+
+	flag.Usage = func() {
+		w := flag.CommandLine.Output()
+		w.Write([]byte(doc))
+		printer.PrintUsage(w)
+		w.Write([]byte("\n"))
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 	if flag.NArg() == 0 {
-		log.Fatal("missing package pattern (e.g. ./...)")
+		flag.Usage()
+		log.Fatal("-------\n\nError: missing package pattern (e.g. ./...)")
 	}
 
 	packagePattern = flag.Args()[0]
@@ -59,5 +82,8 @@ func main() {
 				log.Printf("%s\n", err)
 			}
 		}
+		return
 	}
+
+	printer.EncodeAll(stats.GetAll())
 }
