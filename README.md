@@ -1,4 +1,4 @@
-## go-callsite-stats: get information about callsites of functions
+## go-callsite-stats: analyse function callsites
 
 [![go-recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nikolaydubina/go-callsite-stats)](https://goreportcard.com/report/github.com/nikolaydubina/go-callsite-stats)
