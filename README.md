@@ -2,6 +2,7 @@
 
 [![go-recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nikolaydubina/go-callsite-stats)](https://goreportcard.com/report/github.com/nikolaydubina/go-callsite-stats)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/nikolaydubina/go-callsite-stats/badge)](https://securityscorecards.dev/viewer/?uri=github.com/nikolaydubina/go-callsite-stats)
 
 > Useful for refactoring, better naming, better signatures, OOP
 
